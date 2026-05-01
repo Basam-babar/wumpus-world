@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wumpus World — Knowledge-Based Agent · Basam Babar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ══════════════════════════════════════════
+       DESIGN TOKENS — Light Professional Theme
+    ══════════════════════════════════════════ */
+    :root {
+      --bg:        #f0f4f8;
+      --surface:   #ffffff;
+      --surface2:  #f8fafc;
+      --border:    #e2e8f0;
+      --border2:   #cbd5e1;
+
+      --text:      #1e293b;
+      --text2:     #64748b;
+      --text3:     #94a3b8;
+
+      --green:     #059669;
+      --green-bg:  #ecfdf5;
+      --green-bd:  #a7f3d0;
+
+      --cyan:      #0891b2;
+      --cyan-bg:   #ecfeff;
+      --cyan-bd:   #a5f3fc;
+
+      --red:       #dc2626;
+      --red-bg:    #fef2f2;
+      --red-bd:    #fca5a5;
+
+      --orange:    #d97706;
+      --orange-bg: #fffbeb;
+      --orange-bd: #fcd34d;
+
+      --blue:      #2563eb;
+      --blue-bg:   #eff6ff;
+      --blue-bd:   #bfdbfe;
+
+      --yellow:    #b45309;
+      --yellow-bg: #fefce8;
+      --yellow-bd: #fde68a;
+
+      --purple:    #7c3aed;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+      --shadow:    0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.05);
+
+      --radius:    10px;
+      --radius-sm: 6px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ══════════════════════════════════════════
+       MASTHEAD
+    ══════════════════════════════════════════ */
+    .masthead {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 28px 24px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .masthead::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--green), var(--cyan), var(--blue));
+    }
+
+    .masthead-inner {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .byline {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 10px;
+    }
+
+    .byline strong {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .header-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(26px, 5vw, 46px);
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -1px;
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+
+    .header-title .accent {
+      color: var(--green);
+    }
+
+    .header-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 14px;
+    }
+
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-green  { color: var(--green);  background: var(--green-bg);  border-color: var(--green-bd); }
+    .badge-cyan   { color: var(--cyan);   background: var(--cyan-bg);   border-color: var(--cyan-bd); }
+    .badge-blue   { color: var(--blue);   background: var(--blue-bg);   border-color: var(--blue-bd); }
+
+    /* ══════════════════════════════════════════
+       PAGE BODY
+    ══════════════════════════════════════════ */
+    .page-body {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 20px 40px;
+    }
+
+    /* ══════════════════════════════════════════
+       LAYOUT
+    ══════════════════════════════════════════ */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .left-col, .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ══════════════════════════════════════════
+       PANEL CARD
+    ══════════════════════════════════════════ */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ══════════════════════════════════════════
+       CONFIG CONTROLS
+    ══════════════════════════════════════════ */
+    .config-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slider-lbl {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+      min-width: 46px;
+    }
+
+    input[type="range"] {
+      width: 100px;
+      accent-color: var(--green);
+      cursor: pointer;
+      height: 4px;
+    }
+
+    .slider-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--green);
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1.5px solid;
+      background: transparent;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn:not(:disabled):active { transform: scale(0.97); }
+
+    .btn-green  { color: var(--surface); background: var(--green);   border-color: var(--green); }
+    .btn-green:not(:disabled):hover  { background: #047857; border-color: #047857; box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
+
+    .btn-cyan   { color: var(--cyan);  border-color: var(--cyan);  background: var(--cyan-bg); }
+    .btn-cyan:not(:disabled):hover   { background: var(--cyan);  color: white; box-shadow: 0 4px 12px rgba(8,145,178,0.25); }
+
+    .btn-red    { color: var(--red);   border-color: var(--red);   background: var(--red-bg); }
+    .btn-red:not(:disabled):hover    { background: var(--red);    color: white; box-shadow: 0 4px 12px rgba(220,38,38,0.25); }
+
+    /* ══════════════════════════════════════════
+       STATUS ROW
+    ══════════════════════════════════════════ */
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .status-block {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+
+    .status-lbl {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .status-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 600;
+      display: block;
+    }
+
+    .msg-text {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.6;
+      padding: 2px 0;
+    }
+
+    /* ══════════════════════════════════════════
+       GRID
+    ══════════════════════════════════════════ */
+    .grid-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #grid {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .grid-row { display: flex; gap: 3px; }
+
+    .cell {
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+      background: var(--surface2);
+    }
+
+    .cell-coord {
+      position: absolute;
+      top: 3px; left: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      color: var(--text3);
+      line-height: 1;
+    }
+
+    .cell-icons {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .ci    { font-size: 16px; line-height: 1.2; }
+    .ci-sm { font-size: 11px; line-height: 1.2; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    .ci-lg { font-size: 22px; line-height: 1.2; }
+
+    /* Cell state colours — light theme */
+    .c-unk  { background: #f8fafc; border-color: #e2e8f0; }
+    .c-agent{ background: #ecfeff; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(8,145,178,0.12); }
+    .c-vis  { background: #f0fdf4; border-color: #bbf7d0; }
+    .c-bz   { background: #eff6ff; border-color: #bfdbfe; }
+    .c-st   { background: #fffbeb; border-color: #fde68a; }
+    .c-both { background: #fefce8; border-color: #fde68a; }
+    .c-safe { background: #ecfdf5; border-color: #a7f3d0; }
+    .c-dng  { background: #fff1f2; border-color: #fecdd3; }
+    .c-pit  { background: #fef2f2; border-color: #fca5a5; }
+    .c-wump { background: #fff7ed; border-color: #fed7aa; }
+    .c-gold { background: #fefce8; border-color: #fde68a; }
+
+    /* ══════════════════════════════════════════
+       PERCEPTS
+    ══════════════════════════════════════════ */
+    .percept-row { display: flex; gap: 12px; }
+
+    .perc-box {
+      flex: 1;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 8px;
+      text-align: center;
+      transition: all 0.25s;
+      background: var(--surface2);
+    }
+
+    .perc-off  { }
+    .perc-bz   { border-color: var(--blue);   background: var(--blue-bg);   box-shadow: 0 2px 8px rgba(37,99,235,0.12); }
+    .perc-st   { border-color: var(--orange); background: var(--orange-bg); box-shadow: 0 2px 8px rgba(217,119,6,0.12); }
+
+    .perc-sym  { font-size: 28px; line-height: 1.2; }
+    .perc-name {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    /* ══════════════════════════════════════════
+       METRICS
+    ══════════════════════════════════════════ */
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .metric-row:last-child { border-bottom: none; }
+
+    .m-key {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+    }
+
+    .m-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* ══════════════════════════════════════════
+       KB LOG
+    ══════════════════════════════════════════ */
+    #kb-log {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .kb-entry {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 5px;
+      border-left: 3px solid;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .kb-pos { color: #065f46; background: #ecfdf5; border-color: var(--green); }
+    .kb-neg { color: #991b1b; background: #fef2f2; border-color: var(--red); }
+    .kb-dis { color: #1e40af; background: #eff6ff; border-color: var(--blue); }
+    .kb-empty { font-size: 13px; color: var(--text3); text-align: center; padding: 24px 0; }
+
+    /* ══════════════════════════════════════════
+       LEGEND
+    ══════════════════════════════════════════ */
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .leg-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .leg-sym {
+      font-size: 16px;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .leg-txt { color: var(--text2); font-weight: 400; }
+
+    /* ══════════════════════════════════════════
+       CONTROLS
+    ══════════════════════════════════════════ */
+    .ctrl-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .speed-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 4px;
+    }
+
+    .speed-lbl {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+    }
+
+    /* ══════════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════════ */
+    .footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 24px 20px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .footer-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .footer-name span { color: var(--green); }
+
+    .footer-sub {
+      font-size: 13px;
+      color: var(--text3);
+      letter-spacing: 0.5px;
+    }
+
+    /* ══════════════════════════════════════════
+       SCROLLBAR
+    ══════════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+    /* ══════════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════════ */
+    @media (max-width: 600px) {
+      .masthead { padding: 20px 16px 18px; }
+      .page-body { padding: 16px 14px 32px; }
+      .config-row { gap: 12px; }
+      .slider-group { gap: 8px; }
+      input[type="range"] { width: 80px; }
+      .percept-row { gap: 8px; }
+      .status-row { flex-direction: column; }
+      .ctrl-row { gap: 8px; }
+      .legend-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════ MASTHEAD ══════════ -->
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="byline">Developed by &nbsp;<strong>Basam Babar</strong></div>
+      <h1 class="header-title">Wumpus <span class="accent">World</span></h1>
+      <div class="header-badges">
+        <span class="badge badge-green">Knowledge-Based Agent</span>
+        <span class="badge badge-cyan">Resolution Refutation</span>
+        <span class="badge badge-blue">Propositional Logic</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════ PAGE BODY ══════════ -->
+  <main class="page-body">
+    <div class="layout">
+
+      <!-- ─── LEFT COLUMN ─── -->
+      <div class="left-col">
+
+        <!-- Grid Configuration -->
+        <div class="panel">
+          <div class="panel-title">Grid Configuration</div>
+          <div class="config-row">
+            <div class="slider-group">
+              <span class="slider-lbl">Rows</span>
+              <input type="range" id="rows-sl" min="3" max="9" value="5"
+                oninput="document.getElementById('rows-v').textContent=this.value">
+              <span class="slider-val" id="rows-v">5</span>
+            </div>
+            <div class="slider-group">
+              <span class="slider-lbl">Cols</span>
+              <input type="range" id="cols-sl" min="3" max="9" value="5"
+                oninput="document.getElementById('cols-v').textContent=this.value">
+              <span class="slider-val" id="cols-v">5</span>
+            </div>
+            <button class="btn btn-green" onclick="initGame()">▶ Start Game</button>
+          </div>
+        </div>
+
+        <!-- Agent Status -->
+        <div class="panel">
+          <div class="panel-title">Agent Status</div>
+          <div class="status-row">
+            <div class="status-block">
+              <span class="status-lbl">Status</span>
+              <span class="status-val" id="status-val" style="color:var(--text3)">Standby</span>
+            </div>
+            <div class="status-block">
+              <span class="status-lbl">Position</span>
+              <span class="status-val" id="pos-val" style="color:var(--text)">(0, 0)</span>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="msg-text" id="msg-text">Configure grid dimensions above and press <strong>Start Game</strong> to begin a new episode.</div>
+          </div>
+        </div>
+
+        <!-- World Map -->
+        <div class="panel">
+          <div class="panel-title">
+            World Map
+            <span id="grid-dims" style="color:var(--text3); font-weight:400; font-family:'JetBrains Mono',monospace; font-size:11px; margin-left:8px">— × —</span>
+          </div>
+          <div class="grid-wrapper">
+            <div id="grid"></div>
+          </div>
+        </div>
+
+        <!-- Step Controls -->
+        <div class="panel">
+          <div class="panel-title">Playback Controls</div>
+          <div class="ctrl-row">
+            <button class="btn btn-cyan" id="step-btn" onclick="doStep()" disabled>⏭ Step</button>
+            <button class="btn btn-cyan" id="auto-btn" onclick="toggleAuto()" disabled>▶▶ Auto Play</button>
+            <div class="speed-row">
+              <span class="speed-lbl">Speed</span>
+              <input type="range" id="speed-sl" min="150" max="1500" step="50" value="650"
+                oninput="autoSpeed=+this.value" style="width:80px">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ─── RIGHT COLUMN ─── -->
+      <div class="right-col">
+
+        <!-- Active Percepts -->
+        <div class="panel">
+          <div class="panel-title">Active Percepts</div>
+          <div class="percept-row">
+            <div class="perc-box perc-off" id="p-breeze">
+              <div class="perc-sym" id="p-bz-sym" style="color:var(--text3)">〜</div>
+              <div class="perc-name" id="p-bz-lbl" style="color:var(--text3)">Breeze</div>
+            </div>
+            <div class="perc-box perc-off" id="p-stench">
+              <div class="perc-sym" id="p-st-sym" style="color:var(--text3)">≋</div>
+              <div class="perc-name" id="p-st-lbl" style="color:var(--text3)">Stench</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics Dashboard -->
+        <div class="panel">
+          <div class="panel-title">Metrics Dashboard</div>
+          <div id="metrics-body">
+            <div class="metric-row"><span class="m-key">Inference Steps</span><span class="m-val" style="color:var(--green)">—</span></div>
+            <div class="metric-row"><span class="m-key">KB Clauses</span><span class="m-val" style="color:var(--cyan)">—</span></div>
+            <div class="metric-row"><span class="m-key">Cells Visited</span><span class="m-val" style="color:var(--text)">—</span></div>
+            <div class="metric-row"><span class="m-key">Safe Inferred</span><span class="m-val" style="color:var(--green)">—</span></div>
+            <div class="metric-row"><span class="m-key">Danger Inferred</span><span class="m-val" style="color:var(--red)">—</span></div>
+            <div class="metric-row"><span class="m-key">Moves Taken</span><span class="m-val" style="color:var(--yellow)">—</span></div>
+          </div>
+        </div>
+
+        <!-- KB Clause Log -->
+        <div class="panel">
+          <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>Knowledge Base · CNF Clauses</span>
+            <span id="kb-count" style="color:var(--text3);font-size:11px;font-weight:500">0 recent</span>
+          </div>
+          <div id="kb-log">
+            <div class="kb-empty">No clauses yet — start a game episode</div>
+          </div>
+        </div>
+
+        <!-- Cell Legend -->
+        <div class="panel">
+          <div class="panel-title">Cell Legend</div>
+          <div class="legend-grid">
+            <div class="leg-item"><span class="leg-sym" style="color:var(--cyan)">◈</span><span class="leg-txt">Agent</span></div>
+            <div class="leg-item"><span class="leg-sym" style="color:var(--green)">✓</span><span class="leg-txt">Visited safe</span></div>
+            <div class="leg-item"><span class="leg-sym" style="color:#16a34a">○</span><span class="leg-txt">Inferred safe</span></div>
+            <div class="leg-item"><span class="leg-sym" style="color:var(--text3)">?</span><span class="leg-txt">Unknown</span></div>
+            <div class="leg-item"><span class="leg-sym" style="color:var(--red)">✕</span><span class="leg-txt">Inferred danger</span></div>
+            <div class="leg-item"><span class="leg-sym" style="color:var(--blue)">〜</span><span class="leg-txt">Breeze</span></div>
+            <div class="leg-item"><span class="leg-sym" style="color:var(--orange)">≋</span><span class="leg-txt">Stench</span></div>
+            <div class="leg-item"><span class="leg-sym" style="color:var(--red)">⬤</span><span class="leg-txt">Pit</span></div>
+            <div class="leg-item"><span class="leg-sym" style="color:var(--orange)">◉</span><span class="leg-txt">Wumpus</span></div>
+            <div class="leg-item"><span class="leg-sym" style="color:var(--yellow)">◆</span><span class="leg-txt">Gold</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ══════════ FOOTER ══════════ -->
+  <footer class="footer">
+    <div class="footer-name">Basam <span>Babar</span></div>
+    <div class="footer-sub">Knowledge-Based Agent · Propositional Logic · Resolution Refutation · Wumpus World</div>
+  </footer>
+
+
+  <!-- ══════════ JAVASCRIPT ══════════ -->
+  <script>
+    /* ── Part 1 — Propositional Logic Primitives ── */
+    function neg(lit) {
+      return lit.startsWith('!') ? lit.slice(1) : '!' + lit;
+    }
+    function isTaut(clause) {
+      return clause.some(l => clause.includes(neg(l)));
+    }
+    function cKey(clause) {
+      return [...clause].sort().join('|');
+    }
+    function tryResolve(c1, c2) {
+      for (const l of c1) {
+        if (c2.includes(neg(l))) {
+          return [...new Set([
+            ...c1.filter(x => x !== l),
+            ...c2.filter(x => x !== neg(l))
+          ])];
+        }
+      }
+      return null;
+    }
+
+    /* ── Part 2 — Knowledge Base ── */
+    class KnowledgeBase {
+      constructor() {
+        this.clauses = [];
+        this.totalSteps = 0;
+        this.history = [];
+      }
+      addClause(clause) {
+        if (!clause.length || isTaut(clause)) return;
+        const k = cKey(clause);
+        if (this.clauses.some(c => cKey(c) === k)) return;
+        this.clauses.push([...clause]);
+        this.history.push([...clause]);
+        if (this.history.length > 60) this.history.shift();
+      }
+      tell(lit) { this.addClause([lit]); }
+      ask(literal) {
+        if (this.clauses.some(c => c.length === 1 && c[0] === literal)) return true;
+        const hypothesis = neg(literal);
+        const working = [...this.clauses.map(c => [...c]), [hypothesis]];
+        const seen = new Set(working.map(cKey));
+        let steps = 0;
+        while (steps < 2500) {
+          const fresh = [];
+          for (let i = 0; i < working.length && steps < 2500; i++) {
+            for (let j = i + 1; j < working.length && steps < 2500; j++) {
+              steps++;
+              const resolvent = tryResolve(working[i], working[j]);
+              if (resolvent !== null) {
+                if (resolvent.length === 0) { this.totalSteps += steps; return true; }
+                const k = cKey(resolvent);
+                if (!seen.has(k) && !isTaut(resolvent)) { seen.add(k); fresh.push(resolvent); }
+              }
+            }
+          }
+          if (!fresh.length) break;
+          working.push(...fresh);
+        }
+        this.totalSteps += steps;
+        return false;
+      }
+      isSafe(r, c)   { return this.ask(`!P_${r}_${c}`) && this.ask(`!W_${r}_${c}`); }
+      isDanger(r, c) { return this.ask(`P_${r}_${c}`) || this.ask(`W_${r}_${c}`); }
+      perceive(r, c, breeze, stench, nbrs) {
+        this.tell(breeze  ? `B_${r}_${c}` : `!B_${r}_${c}`);
+        this.tell(stench  ? `S_${r}_${c}` : `!S_${r}_${c}`);
+        if (!breeze) { nbrs.forEach(([nr,nc]) => this.tell(`!P_${nr}_${nc}`)); }
+        else if (nbrs.length) { this.addClause(nbrs.map(([nr,nc]) => `P_${nr}_${nc}`)); }
+        if (!stench) { nbrs.forEach(([nr,nc]) => this.tell(`!W_${nr}_${nc}`)); }
+        else if (nbrs.length) { this.addClause(nbrs.map(([nr,nc]) => `W_${nr}_${nc}`)); }
+      }
+    }
+
+    /* ── Part 3 — World & Pathfinding ── */
+    function adjacents(r, c, R, C) {
+      return [[-1,0],[1,0],[0,-1],[0,1]]
+        .map(([dr,dc]) => [r+dr,c+dc])
+        .filter(([nr,nc]) => nr>=0 && nr<R && nc>=0 && nc<C);
+    }
+    function buildWorld(R, C) {
+      const cells = {};
+      for (let r=0;r<R;r++) for (let c=0;c<C;c++)
+        cells[`${r}_${c}`]={ pit:false,wumpus:false,gold:false,breeze:false,stench:false };
+      let wr,wc;
+      do { wr=Math.floor(Math.random()*R); wc=Math.floor(Math.random()*C); } while(wr===0&&wc===0);
+      cells[`${wr}_${wc}`].wumpus=true;
+      let gr,gc;
+      do { gr=Math.floor(Math.random()*R); gc=Math.floor(Math.random()*C); }
+      while((gr===0&&gc===0)||(gr===wr&&gc===wc));
+      cells[`${gr}_${gc}`].gold=true;
+      for (let r=0;r<R;r++) for (let c=0;c<C;c++) {
+        if(r===0&&c===0) continue;
+        if(cells[`${r}_${c}`].wumpus) continue;
+        if(Math.random()<0.18) cells[`${r}_${c}`].pit=true;
+      }
+      for (let r=0;r<R;r++) for (let c=0;c<C;c++) {
+        const ns=adjacents(r,c,R,C);
+        cells[`${r}_${c}`].breeze = ns.some(([nr,nc])=>cells[`${nr}_${nc}`].pit);
+        cells[`${r}_${c}`].stench = ns.some(([nr,nc])=>cells[`${nr}_${nc}`].wumpus);
+      }
+      return cells;
+    }
+    function bfsPath(from, to, visitedSet, safeInferred, R, C) {
+      const [fr,fc]=from,[tr,tc]=to;
+      if(fr===tr&&fc===tc) return [from];
+      const queue=[[from,[from]]];
+      const seen=new Set([`${fr}_${fc}`]);
+      while(queue.length) {
+        const[[r,c],path]=queue.shift();
+        for(const[nr,nc] of adjacents(r,c,R,C)) {
+          const k=`${nr}_${nc}`;
+          if(!seen.has(k)&&(visitedSet.has(k)||safeInferred.has(k))) {
+            seen.add(k);
+            const np=[...path,[nr,nc]];
+            if(nr===tr&&nc===tc) return np;
+            queue.push([[nr,nc],np]);
+          }
+        }
+      }
+      return null;
+    }
+
+    /* ── Part 4 — Display Helpers ── */
+    function fmtLit(lit) {
+      const isNeg=lit.startsWith('!');
+      const base=isNeg?lit.slice(1):lit;
+      const parts=base.split('_');
+      const tm={P:'Pit',W:'Wumpus',B:'Breeze',S:'Stench'};
+      const name=tm[parts[0]]||parts[0];
+      const loc=parts.length>=3?`(${parts[1]},${parts[2]})`:'';
+      return `${isNeg?'¬':''}${name}${loc}`;
+    }
+    function fmtClause(clause) {
+      if(clause.length===1) return fmtLit(clause[0]);
+      return '('+clause.map(fmtLit).join(' ∨ ')+')';
+    }
+
+    /* ── Part 5 — Game State ── */
+    let ROWS=5,COLS=5;
+    let world=null,kb=null;
+    let agentPos=[0,0];
+    let visited=new Set(),safeSet=new Set(),dangerSet=new Set();
+    let gameStatus='idle';
+    let percepts={breeze:false,stench:false};
+    let moveCount=0;
+    let lastMsg='Configure grid dimensions above and press <strong>Start Game</strong> to begin.';
+    let autoTimer=null,autoSpeed=650,autoPlaying=false;
+
+    /* ── Part 6 — Game Engine ── */
+    function initGame() {
+      stopAutoPlay();
+      ROWS=parseInt(document.getElementById('rows-sl').value);
+      COLS=parseInt(document.getElementById('cols-sl').value);
+      document.getElementById('grid-dims').textContent=`${ROWS} × ${COLS}`;
+      world=buildWorld(ROWS,COLS);
+      kb=new KnowledgeBase();
+      kb.tell('!P_0_0'); kb.tell('!W_0_0');
+      agentPos=[0,0];
+      visited=new Set(); safeSet=new Set(['0_0']); dangerSet=new Set();
+      gameStatus='running'; percepts={breeze:false,stench:false}; moveCount=0;
+      lastMsg='Agent spawned at (0,0). Press <strong>Step</strong> to advance one move.';
+      renderAll();
+    }
+
+    function doStep() {
+      if(gameStatus!=='running') return;
+      const[r,c]=agentPos;
+      const cellKey=`${r}_${c}`;
+      const cell=world[cellKey];
+      visited.add(cellKey); safeSet.add(cellKey);
+      if(cell.pit){
+        gameStatus='dead'; lastMsg=`💀 <strong>Agent dead</strong> — Fell into a pit at (${r},${c})`;
+        stopAutoPlay(); renderAll(); return;
+      }
+      if(cell.wumpus){
+        gameStatus='dead'; lastMsg=`💀 <strong>Agent dead</strong> — Devoured by the Wumpus at (${r},${c})`;
+        stopAutoPlay(); renderAll(); return;
+      }
+      if(cell.gold){
+        gameStatus='won'; lastMsg=`🏆 <strong>Gold retrieved</strong> at (${r},${c})! Victory in ${moveCount} moves!`;
+        stopAutoPlay(); renderAll(); return;
+      }
+      percepts.breeze=cell.breeze; percepts.stench=cell.stench;
+      const nbrs=adjacents(r,c,ROWS,COLS);
+      kb.perceive(r,c,cell.breeze,cell.stench,nbrs);
+      for(let tr=0;tr<ROWS;tr++) for(let tc=0;tc<COLS;tc++) {
+        const tk=`${tr}_${tc}`;
+        if(visited.has(tk)) continue;
+        if(kb.isSafe(tr,tc)) safeSet.add(tk);
+        else if(kb.isDanger(tr,tc)) dangerSet.add(tk);
+      }
+      let nextMove=null;
+      for(const[nr,nc] of nbrs) {
+        const nk=`${nr}_${nc}`;
+        if(!visited.has(nk)&&safeSet.has(nk)){nextMove=[nr,nc];break;}
+      }
+      if(!nextMove) {
+        outerLoop:
+        for(let tr=0;tr<ROWS;tr++) for(let tc=0;tc<COLS;tc++) {
+          const tk=`${tr}_${tc}`;
+          if(!visited.has(tk)&&safeSet.has(tk)) {
+            const path=bfsPath(agentPos,[tr,tc],visited,safeSet,ROWS,COLS);
+            if(path&&path.length>1){nextMove=path[1];break outerLoop;}
+          }
+        }
+      }
+      if(!nextMove){
+        gameStatus='stuck';
+        lastMsg='⚠️ All reachable safe cells explored. No safe path remaining.';
+        stopAutoPlay(); renderAll(); return;
+      }
+      moveCount++;
+      const prev=agentPos; agentPos=nextMove;
+      const flags=[];
+      if(cell.breeze) flags.push('Breeze');
+      if(cell.stench) flags.push('Stench');
+      const percStr=flags.length?flags.join(' + '):'Clear';
+      lastMsg=`Move ${moveCount}: (${prev[0]},${prev[1]}) → (${nextMove[0]},${nextMove[1]}) &nbsp;|&nbsp; ${percStr} &nbsp;|&nbsp; KB: ${kb.clauses.length} clauses`;
+      renderAll();
+    }
+
+    function toggleAuto() { autoPlaying?stopAutoPlay():startAutoPlay(); }
+
+    function startAutoPlay() {
+      if(gameStatus!=='running') return;
+      autoPlaying=true;
+      autoTimer=setInterval(()=>{ if(gameStatus!=='running'){stopAutoPlay();return;} doStep(); },autoSpeed);
+      const btn=document.getElementById('auto-btn');
+      btn.textContent='⏹ Stop'; btn.className='btn btn-red';
+    }
+    function stopAutoPlay() {
+      autoPlaying=false;
+      if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
+      const btn=document.getElementById('auto-btn');
+      if(btn){btn.textContent='▶▶ Auto Play';btn.className='btn btn-cyan';}
+    }
+
+    /* ── Part 7 — Rendering ── */
+    function renderGrid() {
+      const container=document.getElementById('grid');
+      if(!world){container.innerHTML='';return;}
+      const cellSize=Math.min(72,Math.max(44,Math.floor(560/Math.max(ROWS,COLS))));
+      const reveal=gameStatus==='dead'||gameStatus==='won'||gameStatus==='stuck';
+      let html='';
+      for(let r=0;r<ROWS;r++){
+        html+='<div class="grid-row">';
+        for(let c=0;c<COLS;c++){
+          const k=`${r}_${c}`;
+          const cell=world[k];
+          const isAgent=agentPos[0]===r&&agentPos[1]===c;
+          const isVis=visited.has(k);
+          const isSafe=safeSet.has(k)&&!isVis;
+          const isDng=dangerSet.has(k)&&!isVis;
+          const showFul=isVis||reveal;
+          let cls='cell c-unk';
+          if(isAgent) cls='cell c-agent';
+          else if(showFul){
+            if(cell.pit) cls='cell c-pit';
+            else if(cell.wumpus) cls='cell c-wump';
+            else if(cell.gold) cls='cell c-gold';
+            else if(cell.breeze&&cell.stench) cls='cell c-both';
+            else if(cell.breeze) cls='cell c-bz';
+            else if(cell.stench) cls='cell c-st';
+            else cls='cell c-vis';
+          } else if(isDng) cls='cell c-dng';
+          else if(isSafe) cls='cell c-safe';
+          let icons='';
+          if(isAgent) icons+=`<span class="ci ci-lg" style="color:var(--cyan)">◈</span>`;
+          if(showFul){
+            if(cell.pit) icons+=`<span class="ci" style="color:var(--red)">⬤</span>`;
+            if(cell.wumpus) icons+=`<span class="ci" style="color:var(--orange)">◉</span>`;
+            if(cell.gold) icons+=`<span class="ci" style="color:var(--yellow)">◆</span>`;
+          }
+          if(isVis&&!cell.pit&&!cell.wumpus){
+            if(cell.breeze) icons+=`<span class="ci-sm" style="color:var(--blue)">〜</span>`;
+            if(cell.stench) icons+=`<span class="ci-sm" style="color:var(--orange)">≋</span>`;
+            if(!cell.breeze&&!cell.stench&&!isAgent) icons+=`<span class="ci-sm" style="color:var(--green)">✓</span>`;
+          }
+          if(!isVis&&!reveal){
+            if(isDng) icons+=`<span class="ci" style="color:var(--red)">✕</span>`;
+            else if(isSafe) icons+=`<span class="ci" style="color:var(--green)">○</span>`;
+            else icons+=`<span class="ci" style="color:var(--text3)">?</span>`;
+          }
+          html+=`<div class="${cls}" style="width:${cellSize}px;height:${cellSize}px">
+            <span class="cell-coord">${r},${c}</span>
+            <div class="cell-icons">${icons}</div>
+          </div>`;
+        }
+        html+='</div>';
+      }
+      container.innerHTML=html;
+    }
+
+    function renderPercepts() {
+      const bBox=document.getElementById('p-breeze'),bSym=document.getElementById('p-bz-sym'),bLbl=document.getElementById('p-bz-lbl');
+      const sBox=document.getElementById('p-stench'),sSym=document.getElementById('p-st-sym'),sLbl=document.getElementById('p-st-lbl');
+      if(percepts.breeze){
+        bBox.className='perc-box perc-bz'; bSym.style.color='var(--blue)'; bLbl.style.color='var(--blue)';
+      } else {
+        bBox.className='perc-box perc-off'; bSym.style.color='var(--text3)'; bLbl.style.color='var(--text3)';
+      }
+      if(percepts.stench){
+        sBox.className='perc-box perc-st'; sSym.style.color='var(--orange)'; sLbl.style.color='var(--orange)';
+      } else {
+        sBox.className='perc-box perc-off'; sSym.style.color='var(--text3)'; sLbl.style.color='var(--text3)';
+      }
+    }
+
+    function renderStatus() {
+      const clrs={ idle:'var(--text3)', running:'var(--green)', dead:'var(--red)', won:'var(--yellow)', stuck:'var(--orange)' };
+      const lbls={ idle:'Standby', running:'Active', dead:'Agent Dead', won:'Mission Success', stuck:'No Path' };
+      const sv=document.getElementById('status-val');
+      sv.textContent=lbls[gameStatus]||gameStatus;
+      sv.style.color=clrs[gameStatus]||'var(--text3)';
+      document.getElementById('pos-val').textContent=`(${agentPos[0]}, ${agentPos[1]})`;
+      document.getElementById('msg-text').innerHTML=lastMsg;
+    }
+
+    function renderMetrics() {
+      if(!kb) return;
+      const total=ROWS*COLS;
+      const rows=[
+        ['Inference Steps',kb.totalSteps,'var(--green)'],
+        ['KB Clauses',kb.clauses.length,'var(--cyan)'],
+        ['Cells Visited',`${visited.size} / ${total}`,'var(--text)'],
+        ['Safe Inferred',safeSet.size,'var(--green)'],
+        ['Danger Inferred',dangerSet.size,'var(--red)'],
+        ['Moves Taken',moveCount,'var(--yellow)'],
+      ];
+      document.getElementById('metrics-body').innerHTML=rows.map(([k,v,c])=>
+        `<div class="metric-row"><span class="m-key">${k}</span><span class="m-val" style="color:${c}">${v}</span></div>`
+      ).join('');
+    }
+
+    function renderKBLog() {
+      if(!kb) return;
+      const clauses=[...kb.history].reverse().slice(0,22);
+      document.getElementById('kb-count').textContent=`${clauses.length} recent`;
+      const el=document.getElementById('kb-log');
+      if(!clauses.length){ el.innerHTML='<div class="kb-empty">No clauses yet — start a game episode</div>'; return; }
+      el.innerHTML=clauses.map(clause=>{
+        const isUnit=clause.length===1;
+        const isNeg=isUnit&&clause[0].startsWith('!');
+        const cls=isUnit?(isNeg?'kb-entry kb-neg':'kb-entry kb-pos'):'kb-entry kb-dis';
+        return `<div class="${cls}">${fmtClause(clause)}</div>`;
+      }).join('');
+    }
+
+    function renderControls() {
+      const isRunning=gameStatus==='running';
+      document.getElementById('step-btn').disabled=!isRunning;
+      document.getElementById('auto-btn').disabled=!isRunning;
+      if(!isRunning&&autoPlaying) stopAutoPlay();
+    }
+
+    function renderAll() {
+      renderGrid(); renderPercepts(); renderStatus();
+      renderMetrics(); renderKBLog(); renderControls();
+    }
+
+    /* ── Part 8 — Speed Slider ── */
+    document.getElementById('speed-sl').addEventListener('input',function(){
+      autoSpeed=+this.value;
+      if(autoPlaying){stopAutoPlay();startAutoPlay();}
+    });
+
+    /* ── Part 9 — Initial Render ── */
+    renderAll();
+  </script>
+</body>
+</html>
